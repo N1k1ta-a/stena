@@ -2,9 +2,12 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Для тебя</title>
     <style>
+        /* Сброс стилей для мобильных */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
         body, html {
             margin: 0;
             padding: 0;
@@ -12,10 +15,12 @@
             height: 100%;
             overflow: hidden;
             background-color: #0a0a0a;
-            font-family: 'Montserrat', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             user-select: none;
+            touch-action: manipulation; /* Отключает зум при двойном тапе */
         }
 
+        /* Слой стены */
         .wall {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -24,21 +29,23 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            cursor: crosshair;
+            cursor: pointer;
             transition: opacity 1.5s ease;
         }
 
         .hint {
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 18px;
             text-align: center;
             pointer-events: none;
             text-transform: uppercase;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             animation: pulse 2s infinite;
-            line-height: 1.5;
+            line-height: 1.6;
+            padding: 0 20px;
         }
 
+        /* Слой с текстом */
         .message-container {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -46,18 +53,17 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
-            padding: 20px;
-            box-sizing: border-box;
+            padding: 30px 25px; /* Увеличенные отступы для мобилки */
             background: radial-gradient(circle, #1a1a2e 0%, #0a0a0a 100%);
             z-index: 1;
+            overflow-y: auto; /* Если текст не влезет, можно будет прокрутить */
         }
 
         .message-text {
             color: #e0e0e0;
-            font-size: 18px;
-            line-height: 1.9;
-            max-width: 650px;
+            font-size: 16px; /* Оптимальный размер для чтения с телефона */
+            line-height: 1.8;
+            max-width: 100%;
             opacity: 0;
             transform: translateY(20px);
             transition: all 2s ease 1s;
@@ -71,13 +77,14 @@
         }
 
         .message-text .signature {
-            margin-top: 35px;
+            margin-top: 30px;
             text-align: right;
             font-style: italic;
             color: #888;
-            font-size: 16px;
+            font-size: 15px;
         }
 
+        /* Осколки */
         .shard {
             position: absolute;
             background: #2c3e50;
@@ -88,14 +95,15 @@
         }
         
         @keyframes pulse {
-            0% { opacity: 0.3; }
-            50% { opacity: 0.8; }
-            100% { opacity: 0.3; }
+            0% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.02); }
+            100% { opacity: 0.3; transform: scale(1); }
         }
 
-        @media (max-width: 600px) {
-            .message-text { font-size: 16px; padding: 0 10px; }
-            .hint { font-size: 16px; }
+        /* Адаптация под большие экраны (компьютеры) */
+        @media (min-width: 768px) {
+            .message-text { font-size: 18px; padding: 0 20px; }
+            .hint { font-size: 20px; }
         }
     </style>
 </head>
@@ -116,30 +124,31 @@
     </div>
 
     <div class="wall" id="wall">
-        <div class="hint">Нажми, чтобы разрушить стену<br>и прочитать послание</div>
+        <div class="hint">Нажми несколько раз<br>чтобы разрушить стену<br>и прочитать</div>
     </div>
 
     <script>
         const wall = document.getElementById('wall');
         const msg = document.getElementById('msg');
         let clicks = 0;
-        const totalClicksNeeded = 15; 
+        const totalClicksNeeded = 15; // 15 кликов пальцем - легко и быстро
 
         function createCrack(x, y) {
             const crack = document.createElement('div');
             crack.style.position = 'absolute';
             crack.style.left = x + 'px';
             crack.style.top = y + 'px';
-            crack.style.width = Math.random() * 50 + 20 + 'px';
+            crack.style.width = Math.random() * 40 + 20 + 'px';
             crack.style.height = '2px';
-            crack.style.backgroundColor = 'rgba(0,0,0,0.8)';
+            crack.style.backgroundColor = 'rgba(0,0,0,0.9)';
             crack.style.transform = `rotate(${Math.random() * 360}deg)`;
             crack.style.zIndex = '15';
             crack.style.boxShadow = '0 0 5px black';
             wall.appendChild(crack);
         }
 
-        wall.addEventListener('click', (e) => {
+        // Обработка тапа (нажатия пальцем или мышкой)
+        wall.addEventListener('pointerdown', (e) => {
             const rect = wall.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -147,6 +156,10 @@
 
             clicks++;
 
+            // Легкая вибрация, если телефон поддерживает
+            if (navigator.vibrate) navigator.vibrate(30);
+
+            // Тряска стены
             wall.style.transform = `translate(${Math.random() * 10 - 5}px, ${Math.random() * 10 - 5}px)`;
             setTimeout(() => { wall.style.transform = 'translate(0,0)'; }, 50);
 
@@ -156,11 +169,12 @@
         });
 
         function breakWall() {
+            // Разлетающиеся осколки
             for (let i = 0; i < 50; i++) {
                 const shard = document.createElement('div');
                 shard.className = 'shard';
-                shard.style.width = Math.random() * 100 + 20 + 'px';
-                shard.style.height = Math.random() * 100 + 20 + 'px';
+                shard.style.width = Math.random() * 80 + 20 + 'px';
+                shard.style.height = Math.random() * 80 + 20 + 'px';
                 shard.style.left = Math.random() * 100 + 'vw';
                 shard.style.top = Math.random() * 100 + 'vh';
                 document.body.appendChild(shard);
@@ -177,6 +191,7 @@
             wall.style.opacity = '0';
             setTimeout(() => { wall.style.display = 'none'; }, 1500);
 
+            // Показ текста
             setTimeout(() => {
                 msg.style.opacity = '1';
                 msg.style.transform = 'translateY(0)';
